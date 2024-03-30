@@ -8,14 +8,14 @@ namespace Calculator_2
 {
     public class Validator
     {
-        public static bool IsFirstElementCprrect(char item)
+        public static bool IsFirstElementCorrect(char item)
         {
             if (item == ')')
                 return false;
             else return true;
         }
 
-        public static bool IsAmountOfBracketsCprrect(string expression)
+        public static bool IsAmountOfBracketsCorrect(string expression)
         {
             int counterbracket1 = 0;
             int counterbracket2 = 0;

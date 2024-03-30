@@ -10,80 +10,69 @@ namespace Calculator_2
 {
     public class Calculator
     {
-        public static string OpenBrackets(string input)
+        public static string FindResult(string input)
         {
-            int counterOpenBracket = 0;
-            int indexOfOpenBracket = 0;
-            int levelOfBrackets = 0;
-            string output = string.Empty;
-            Stack<string> stackOfString = new Stack<string>();
+            List<string> expressionList = new List<string>();
+            Stack<string> stackOfString = OpenBrackets(input);
 
-            // раскрываем скобки, пока не останется выражение без скобок
-            while (input.Contains('('))
+            if (stackOfString.Count > 1)
             {
-                levelOfBrackets = FindLevelOfBrackets(input);
-                for (int i = 0; i < input.Length; i++)
+                while (stackOfString.Count > 0)
                 {
-                    if (input[i] == '(')
-                    {
-                        counterOpenBracket++;
-                        indexOfOpenBracket = i;
-                        if (counterOpenBracket != levelOfBrackets)
-                            stackOfString.Push("(");
-                    }
-                    else if (input[i] == ')')
-                    {
-                        if (counterOpenBracket != levelOfBrackets)
-                        {
-                            stackOfString.Push(")");
-                            counterOpenBracket--;
-                        }
-                        else
-                        {
-                            stackOfString.Push(Calculate(input.Substring(indexOfOpenBracket + 1, i - (indexOfOpenBracket + 1))));
-                            counterOpenBracket--;
-                        }
-                    }
-                    else if (IsOperator(input[i]) && input[i - 1] == ')' && input[i + 1] == '(')
-                    { stackOfString.Push(Convert.ToString(input[i])); }
-                    else if (counterOpenBracket != levelOfBrackets)
-                    {
-                        if (Char.IsDigit(input[i]))
-                        {
-                            string number = string.Empty;
-                            while (Char.IsDigit(input[i]))
-                            {
-                                number += input[i];
-                                i++;
-                                if (i == input.Length)
-                                    break;
-                            }
-                            stackOfString.Push(number);
-                            i--;
-                        }
-                        else
-                        { stackOfString.Push(Convert.ToString(input[i])); }
-                    }
+                    expressionList.Insert(0, stackOfString.Pop());
                 }
-                input = string.Empty;
+                string expression = string.Join("", expressionList);
+                stackOfString.Push(Calculate(expression));
+                expressionList.Clear();
+                return stackOfString.Pop();
+            }
+            else { return stackOfString.Pop(); }
+        }
 
-                string[] stringArray = new string[stackOfString.Count];
-                for (int i = stackOfString.Count - 1; i >= 0; i--)
+        private static Stack<string> OpenBrackets(string input)
+        {
+            Stack<string> stackOfString = new Stack<string>();
+            List<string> expressionList = new List<string>();
+            string expression = string.Empty;
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] == '(' || IsOperator(input[i]))
                 {
-                    stringArray[i] = stackOfString.Pop();
+                    stackOfString.Push(Convert.ToString(input[i]));
                 }
-                for (int i = 0; i < stringArray.Length; i++)
+                else if (input[i] == ')')
                 {
-                    input += stringArray[i];
+                    while (stackOfString.Peek() != "(")
+                    {
+                        expressionList.Insert(0, stackOfString.Pop());
+                    }
+                    stackOfString.Pop();
+                    expression = string.Join("", expressionList);
+                    stackOfString.Push(Calculate(expression));
+                    expressionList.Clear();
+                }
+                else if (Char.IsDigit(input[i]))
+                {
+                    string number = string.Empty;
+                    while (Char.IsDigit(input[i]))
+                    {
+                        number += input[i];
+                        i++;
+                        if (i == input.Length)
+                            break;
+                    }
+                    stackOfString.Push(number);
+                    i--;
                 }
             }
-            return output = Calculate(input);
+            return stackOfString;
         }
 
         private static string Calculate(string input)
         {
             string output = string.Empty;
-            Stack<char> stackOfChar = new Stack<char>();
+            Stack<string> stackOfString = new Stack<string>();
 
             // переносим число в строку, оператор в стек
             // оператор переносим в строку к числам в соответствии с приоритетом
@@ -103,54 +92,77 @@ namespace Calculator_2
                 }
                 else if (IsOperator(input[i]))
                 {
-                    if (stackOfChar.Count() > 0)
+                    string negativeNumber = string.Empty;
+                    if (input[i] == '-' && i == 0)
                     {
-                        while (stackOfChar.Count() != 0 && FindPpriority(input[i]) < FindPpriority(stackOfChar.Peek()))
+                        negativeNumber += input[i];
+                        i++;
+                        while (Char.IsDigit(input[i]))
                         {
-                            output += stackOfChar.Pop() + " ";
+                            negativeNumber += input[i];
+                            i++;
                         }
-                            stackOfChar.Push(input[i]);
+                        output += negativeNumber + " ";
+                        i--;
+                    }
+                    else if (input[i] == '-' && IsOperator(input[i - 1]))
+                    {
+                        negativeNumber += input[i];
+                        i++;
+                        while (Char.IsDigit(input[i]))
+                        {
+                            negativeNumber += input[i];
+                            i++;
+                            if (i == input.Length)
+                                break;
+                        }
+                        output += negativeNumber + " ";
+                        i--;
                     }
                     else
                     {
-                        stackOfChar.Push(input[i]);
+                        if (stackOfString.Count() > 0)
+                        {
+                            while (stackOfString.Count() != 0 && FindPpriority(input[i]) < FindPpriority(Convert.ToChar(stackOfString.Peek())))
+                            {
+                                output += stackOfString.Pop() + " ";
+                            }
+                            stackOfString.Push(Convert.ToString(input[i]));
+                        }
+                        else
+                        {
+                            stackOfString.Push(Convert.ToString(input[i]));
+                        }
                     }
                 }
             }
 
             // переносим оставшиеся операторы из стека в строку
-            while (stackOfChar.Count() > 0)
-            { output += stackOfChar.Pop() + " "; }
+            while (stackOfString.Count() > 0)
+            { output += stackOfString.Pop() + " "; }
 
             /* переносим числа в стек
                когда встречается оператор, производим вычисление над двумя последними числами в стеке
                результат добавляем в стек
             */
-            string finalOutput = string.Empty;
-            Stack<string> stackOfString = new Stack<string>();
-            for (int i = 0; i < output.Length; i++)
+            Stack<double> stackOfDouble = new Stack<double>();
+            List<string> expressionList = output.Split(" ").ToList();
+            expressionList.RemoveAt(expressionList.Count - 1);
+
+            foreach (string item in expressionList)
             {
-                if (Char.IsDigit(output[i]))
+                if (double.TryParse(item, out double number))
                 {
-                    string number = string.Empty;
-                    while (Char.IsDigit(output[i]))
-                    {
-                        number += output[i];
-                        i++;
-                    }
-                    stackOfString.Push(number);
-                    i--;
+                    stackOfDouble.Push(number);
                 }
-                else if (output[i] == ' ')
-                    continue;
-                else if (IsOperator(output[i]))
+                else
                 {
-                    double number2 = Convert.ToInt32(stackOfString.Pop());
-                    double number1 = Convert.ToInt32(stackOfString.Pop());
-                    stackOfString.Push(Convert.ToString(GetResult(output[i], number1, number2)));
+                    double number2 = stackOfDouble.Pop();
+                    double number1 = stackOfDouble.Pop();
+                    stackOfDouble.Push(GetResult(Convert.ToChar(item), number1, number2));
                 }
             }
-            return finalOutput += stackOfString.Pop();
+            return Convert.ToString(stackOfDouble.Pop());
         }
 
         private static int FindPpriority(char operator1)
@@ -199,25 +211,6 @@ namespace Calculator_2
             if (item == '+' || item == '-' || item == '*' || item == '/')
                 return true;
             else { return false; }
-        }
-
-        private static int FindLevelOfBrackets (string input)
-        {
-            int result = 0;
-            
-            for (int i = 0; i < input.Length; i++) 
-            {
-                int amountOfBrackets = 0;
-                while (input[i] == '(')
-                {
-                    amountOfBrackets++;
-                    i++;
-                }
-                
-                if (amountOfBrackets > result)
-                    result = amountOfBrackets;
-            }
-            return result;
         }
     }
 }

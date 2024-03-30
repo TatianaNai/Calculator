@@ -6,9 +6,9 @@ do
     Console.WriteLine("Введите выражение");
     expression = Console.ReadLine();
 }
-while (!Validator.IsFirstElementCprrect(expression[0]) || !Validator.IsAmountOfBracketsCprrect(expression) || !Validator.IsNotLetter(expression));
+while (!Validator.IsFirstElementCorrect(expression[0]) || !Validator.IsAmountOfBracketsCorrect(expression) || !Validator.IsNotLetter(expression));
 
-Console.WriteLine(Calculator.OpenBrackets(expression));
+Console.WriteLine(Calculator.FindResult(expression));
 
 
 
